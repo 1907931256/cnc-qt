@@ -73,7 +73,6 @@ ParserData *gerber_data;// = new GerberData();
 %name-prefix "gerber_"
 
 
-%token XPARAM YPARAM IPARAM JPARAM
 %token NEW_LINE
 %token ABS REL SET_INCH SET_MM
 %token NEGATIVE POSITIVE
@@ -89,7 +88,8 @@ ParserData *gerber_data;// = new GerberData();
     char*     s_val;
 }
 
-
+%token <i_val> X_PAR Y_PAR I_PAR J_PAR
+%token <f_val> A_PAR B_PAR
 %token <i_val> INTEGER D_OPCODE G_OPCODE
 %token <f_val> FLOAT APARAM BPARAM 
 %token <s_val> FMT
@@ -110,32 +110,24 @@ glines: gline
         ;
 
 
-gline:  XPARAM INTEGER
+gline:  X_PAR
         {
-            qInfo() << "x" << $2;
+            qInfo() << "x" << $1;
         }
-        | YPARAM INTEGER 
+        | Y_PAR
         {
-            qInfo() << "y" << $2;
-        }
-        | IPARAM INTEGER
-        {
-            qInfo() << "i" << $2;
-        }
-        | JPARAM INTEGER
-        {
-            qInfo() << "j" << $2;
+            qInfo() << "y" << $1;
         }
         | SET_MM
         {
         }
-        | APARAM 
+        | A_PAR 
         {
         }
         | MIRRORING
         {
         }
-        | BPARAM  
+        | B_PAR  
         {
         }
         | POSITIVE
@@ -183,13 +175,13 @@ gline:  XPARAM INTEGER
                 /* INCREMENTAL_NOTATION */
             }
         }
-        | IPARAM FLOAT
+        | I_PAR
         {
-            qInfo() << "i" << $2;
+            qInfo() << "i" << $1;
         }
-        | JPARAM FLOAT
+        | J_PAR
         {
-            qInfo() << "j" << $2;
+            qInfo() << "j" << $1;
         }
         | NEW_LINE
         {
@@ -203,6 +195,6 @@ gline:  XPARAM INTEGER
 extern int gerber_charno;
 
 void gerber_error (const char * error) {
-  fprintf (stderr, "line %d pos %d: %s\n", gerber_lineno, gerber_charno, error);
+  fprintf (stderr, "gerber line %d pos %d: %s\n", gerber_lineno, gerber_charno, error);
 //   return 0;
 }

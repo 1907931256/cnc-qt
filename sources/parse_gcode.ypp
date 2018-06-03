@@ -105,8 +105,9 @@ short lastGCode = -1;
 %token <f_val> FVAL
 %token <s_val> SVAL COMMENTAR TERM VARIABLE
 %token <i_val> IVAL
+%token <i_val> G_CMD M_CMD
 
-%token <c_val> CMD_CHAR PARAM_CHAR LABEL
+%token <c_val> PARAM_CHAR LABEL
 
 %type <op>     EXPR
 
@@ -137,7 +138,7 @@ glines: gline
         ;
 
 
-gline:  CMD_CHAR IVAL
+gline:  G_CMD
         {
             // the new line, create new object
             // for cases, when line begins with g, m command or n: label
@@ -147,63 +148,45 @@ gline:  CMD_CHAR IVAL
             }
             gcode_data->numberLine = gcode_lineno;
 
-            switch ($1 | 0x20){
-                case 'g' :
-                    gcode_data->gCmd = (short)$2;
-                    
-                    // add only commands to the list
-                    // which will be interpretated
-                    switch ($2){ // commands are known 
-                        case 0:  // rapid moving
-                        case 1:  // linear moving
-                        case 2:  // clockwise arc
-                        case 3:  // counter-clockwise arc
-                        case 4:
-                        case 17: // XY plane
-                        case 18: // YZ plane
-                        case 19: // ZX plane
-                        case 20: // units: inches
-                        case 21: // units: millimeters
-                        case 28: // go to home pos
-                        case 40: // compensation off
-                        case 90: // set to absolute positioning 
-                        case 91: // set to relative positioning
-                        case 92:
-                        case 161:
-                        case 162:
-                            lastGCode = (short)$2;
-                            break;
-                       
-                        default:
-                            qWarning() << "G-Code is not decoded:" << $2;
-                            gcode_data->decoded = false;
-                            break;
-                    }
+            gcode_data->gCmd = (short)$1;
+            
+            // add only commands to the list
+            // which will be interpretated
+            switch ($1){ // commands are known 
+                case 0:  // rapid moving
+                case 1:  // linear moving
+                case 2:  // clockwise arc
+                case 3:  // counter-clockwise arc
+                case 4:
+                case 17: // XY plane
+                case 18: // YZ plane
+                case 19: // ZX plane
+                case 20: // units: inches
+                case 21: // units: millimeters
+                case 28: // go to home pos
+                case 40: // compensation off
+                case 90: // set to absolute positioning 
+                case 91: // set to relative positioning
+                case 92:
+                case 161:
+                case 162:
+                    lastGCode = (short)$1;
                     break;
-
-                case 'm' :
-                    // has already M command
-                    if (gcode_data->mCmd >= 0) {
-                        gcode_data = new ParserData(gcode_data);
-                    }
-                    gcode_data->mCmd = (short)$2;
-                    // TODO only for known codes
-                    break;
- 
+                
                 default:
-                    // not decoded, it's possible other code? 
-                    // TODO: not critical message 
+                    qWarning() << "G-Code is not decoded:" << $1;
+                    gcode_data->decoded = false;
                     break;
             }
         }
-        | CMD_CHAR VARIABLE
+        | M_CMD
         {
-            qInfo() << $1 << $2;
-        }
-        | CMD_CHAR FVAL
-        {
-            // TODO extended, with point G or M command
-            qWarning() << $1 << "-Code is not decoded:" << $2;
+            // has already M command
+            if (gcode_data->mCmd >= 0) {
+                gcode_data = new ParserData(gcode_data);
+            }
+            gcode_data->numberLine = gcode_lineno;
+            gcode_data->mCmd = (short)$1;
         }
         | LABEL IVAL 
         {
@@ -453,6 +436,6 @@ extern int gcode_charno;
   
   
 void gcode_error (const char * error) {
-  fprintf (stderr, "line %d pos %d: %s\n", gcode_lineno, gcode_charno, error);
+  fprintf (stderr, "gcode line %d pos %d: %s\n", gcode_lineno, gcode_charno, error);
 //   return 0;
 }

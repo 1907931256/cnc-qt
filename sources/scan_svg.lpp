@@ -268,7 +268,7 @@ OPER     [\(\)]
 }
 
 . { /* any other character is invalid */
-  fprintf (stderr, "line %d: position %d syntax error, unrecognized character: `%s'\n", svg_lineno, svg_charno, svg_text);
+  fprintf (stderr, "svg line %d: position %d syntax error, unrecognized character: `%s'\n", svg_lineno, svg_charno, svg_text);
    return InvalidCharacter;
 }
 

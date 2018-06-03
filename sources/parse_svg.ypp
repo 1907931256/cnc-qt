@@ -272,6 +272,6 @@ EXPR:   STR
 extern int svg_charno;
 
 void svg_error (const char * error) {
-  fprintf (stderr, "line %d pos %d: %s\n", svg_lineno, svg_charno, error);
+  fprintf (stderr, "svg line %d pos %d: %s\n", svg_lineno, svg_charno, error);
 //   return 0;
 }

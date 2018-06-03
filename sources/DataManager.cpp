@@ -1641,14 +1641,35 @@ bool cDataManager::readFile(const QString &fileName)
 
     QByteArray arr = file.readAll();
     QByteArray detectArray = arr.left(4096); // first 4096 bytes for format detection
-
+    QStringList detectList = QString(detectArray).split("\n");
+    
     file.close();
-
     TypeFile = None;
     
+    foreach(QString s, detectList){
+        if (s.indexOf("<svg")>=0){
+            TypeFile = SVG;
+            break;
+        }
+        if (s.indexOf(QRegExp("G0*4\\s"))>=0){
+            TypeFile = GBR;
+            break;
+        }
+        if (s.indexOf("$ACADVER")>=0) {
+            TypeFile = DXF;
+            break;
+        }
+        if(s.indexOf(QRegExp("G0*1\\s"))>=0 || s.indexOf(QRegExp("G0+\\s"))>=0){
+            TypeFile = GCODE;
+            break;
+        }
+        if( s.indexOf("IN1;") >= 0) {
+            TypeFile = PLT;
+            break;
+        }
+    }
     
-    if ((detectArray.indexOf("G04 ") >= 0) || (detectArray.indexOf("G4 ") >= 0)) { // extended gerber
-        TypeFile = GBR;
+    if (TypeFile == GBR) { // extended gerber
         QTime tMess;
         tMess.start();
         
@@ -1668,8 +1689,7 @@ bool cDataManager::readFile(const QString &fileName)
         return res;
     }
 
-    if ((detectArray.indexOf("G0") >= 0) || (detectArray.indexOf("G1") >= 0)) { // G-Code program detect
-        TypeFile = GCODE;
+    if (TypeFile == GCODE) { // G-Code program detect
         QTime tMess;
         tMess.start();
 
@@ -1709,8 +1729,7 @@ bool cDataManager::readFile(const QString &fileName)
     }
 
 
-    if ( detectArray.indexOf("<svg") >= 0 ) { // svg
-        TypeFile = SVG;
+    if ( TypeFile == SVG ) { // svg
         QTime tMess;
         tMess.start();
 
@@ -1729,9 +1748,7 @@ bool cDataManager::readFile(const QString &fileName)
         return res;
     }
 
-    if ( detectArray.indexOf("$ACADVER") >= 0 ) { // polylines
-        TypeFile = DXF;
-
+    if ( TypeFile == DXF ) { // polylines
         QTime tMess;
         tMess.start();
 
@@ -1752,13 +1769,12 @@ bool cDataManager::readFile(const QString &fileName)
 
 
 
-    if ( detectArray.indexOf("IN1;") >= 0 ) { // plotter format
-        TypeFile = PLT;
+    if ( TypeFile == PLT ) { // plotter format
         bool res = readPLT(arr.data());
 
         return res;
     }
-
+#if 0
     if ( detectArray.indexOf("") >= 0 ) { // eps
         TypeFile = EPS;
         bool res = readEPS(arr.data());
@@ -1773,7 +1789,7 @@ bool cDataManager::readFile(const QString &fileName)
 
         return res;
     }
-
+#endif
     if (TypeFile == None) { // error
         // qmessagebox
 

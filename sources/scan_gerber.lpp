@@ -84,7 +84,7 @@ EOL       \n
 
 APPERTYPE [CROPM]
 DICTNUM   \D{DIGITS}
-FILENAME  [A-Z0-9_\-\.]+
+FILENAME  [A-Z0-9_\-\& \.]+
 INCH      \IN
 MM        \MM
 INFO      [A-Z]+\:
@@ -118,10 +118,10 @@ NAME      [A-Z0-9]+
 }
 
 <OPTION>{MODE} {
-    if (gerber_text[2] == 'I' && gerber_text[3] == 'N') {
+    if (gerber_text[2] == 'I') {
         return SET_INCH;
     }
-    if (gerber_text[2] == 'M' && gerber_text[3] == 'M') {
+    if (gerber_text[2] == 'M') {
         return SET_MM;
     }
 }
@@ -148,7 +148,7 @@ NAME      [A-Z0-9]+
 }
 
 <INITIAL,OPTION>"," {
-    /* separator in options */
+    /* separator in options, ignore */
 }
 
 <INITIAL>{DCODE} {
@@ -168,12 +168,12 @@ NAME      [A-Z0-9]+
 
 <OPTION>\A{INT}|{REAL1}|{REAL2} {
     gerber_lval.f_val = atof(&gerber_text[1]);
-    return APARAM;
+    return A_PAR;
 }
 
 <OPTION>\B{INT}|{REAL1}|{REAL2} {
     gerber_lval.f_val = atof(&gerber_text[1]);
-    return BPARAM;
+    return B_PAR;
 }
 
 <OPTION>\T[FAOD] {
@@ -284,20 +284,24 @@ NAME      [A-Z0-9]+
     return FLOAT;
 }
 
-<INITIAL,OPTION>\X {
-    return XPARAM;
+<INITIAL,OPTION>\X{INT} {
+    gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
+    return X_PAR;
 }
 
-<INITIAL,OPTION>\Y {
-    return YPARAM;
+<INITIAL,OPTION>\Y{INT} {
+    gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
+    return Y_PAR;
 }
 
-<INITIAL,OPTION>\I {
-    return IPARAM;
+<INITIAL,OPTION>\I{INT} {
+   gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
+    return I_PAR;
 }
 
-<INITIAL,OPTION>\J {
-    return JPARAM;
+<INITIAL,OPTION>\J{INT} {
+   gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
+    return J_PAR;
 }
 
 <INITIAL,OPTION>{EOL} {
@@ -307,7 +311,7 @@ NAME      [A-Z0-9]+
 
 <*>. { /* any other character is invalid */
   fprintf (stderr,
-       "line %d pos %d: syntax error, unrecognized character: `%s'\n", gerber_lineno, gerber_charno, gerber_text);
+       "gerber line %d pos %d: syntax error, unrecognized character: `%s'\n", gerber_lineno, gerber_charno, gerber_text);
    return InvalidCharacter;
 }
 

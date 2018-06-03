@@ -125,7 +125,7 @@ SYMBOL   [\.\"\|\@\*\{\}]
 <*>{WSPACE}  { /* skip end of line and spaces */ }
 
 <*>. { /* any other character is invalid */
-  fprintf (stderr, "line %d pos %d: syntax error, unrecognized character: `%s'\n", dxf_lineno, dxf_charno, dxf_text);
+  fprintf (stderr, "dxf line %d pos %d: syntax error, unrecognized character: `%s'\n", dxf_lineno, dxf_charno, dxf_text);
    return InvalidCharacter;
 }
 

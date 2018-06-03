@@ -79,13 +79,12 @@ int gcode_charno = 1;
 
 WSPACE   [ \t\r\f]+
 DIGITS   [0-9]+
-COMMENT  \(.+\)
+COMMENT  \(.*\)
 PARAM    [A-FH-MP-Z]
 INTEGER  [+-]?{DIGITS}
 REAL1    [+-]?{DIGITS}?[.,]{DIGITS}
 REAL2    [+-]?{DIGITS}[.,]{DIGITS}?
 VARI     #[\<\>A-Z0-9_]+
-COMMAND  [GM]
 EOL      [\n]+
 OPER     [\+\-\/\*\=\[\]]
 
@@ -113,9 +112,20 @@ SQRT     "SQRT"
 
 %%
 
-{COMMAND} { // commands
-    gcode_lval.c_val = gcode_text[0];
-    return CMD_CHAR;
+
+{COMMENT} {
+    gcode_lval.s_val = strdup(gcode_text); 
+    return COMMENTAR;
+}
+
+"G"{DIGITS} { // commands
+    gcode_lval.i_val = strtol(&gcode_text[1], NULL, 10); 
+    return G_CMD;
+}
+
+"M"{DIGITS} { // commands
+    gcode_lval.i_val = strtol(&gcode_text[1], NULL, 10); 
+    return M_CMD;
 }
 
 {POW} {
@@ -194,10 +204,6 @@ SQRT     "SQRT"
     return NEW_LINE;
 }
 
-{COMMENT} {
-    gcode_lval.s_val = strdup(gcode_text); 
-    return COMMENTAR;
-}
 
 "%".* {
     gcode_lval.s_val = strdup(gcode_text); 
@@ -215,7 +221,7 @@ SQRT     "SQRT"
 }
 
 <*>. { /* any other character is invalid */
-    fprintf (stderr, "line %d pos %d: syntax error, unrecognized character: `%s'\n", gcode_lineno, gcode_charno, gcode_text);
+    fprintf (stderr, "gcode line %d pos %d: syntax error, unrecognized character: `%s'\n", gcode_lineno, gcode_charno, gcode_text);
     return InvalidCharacter;
 }
 

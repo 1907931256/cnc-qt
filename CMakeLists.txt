@@ -315,10 +315,10 @@ FOREACH( type ${ParserTypes} )
   # Create custom Flex
   SET(FlexInput ${CMAKE_CURRENT_SOURCE_DIR}/sources/scan_${type}.lpp )
   SET(FlexOutput ${CMAKE_CURRENT_BINARY_DIR}/scan_${type}.cpp )
-  
+  # bison ${FLEX_EXECUTABLE} -Cf for little bit better performance 
   ADD_CUSTOM_COMMAND(
     OUTPUT ${FlexOutput}
-    COMMAND ${FLEX_EXECUTABLE} -Cf
+    COMMAND ${FLEX_EXECUTABLE}
             --outfile=${FlexOutput}
             --header-file=${CMAKE_CURRENT_BINARY_DIR}/scan_${type}.h
             ${FlexInput}

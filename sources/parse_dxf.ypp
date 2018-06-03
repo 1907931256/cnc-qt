@@ -141,6 +141,6 @@ line:   STR
 extern int dxf_charno;
 
 void dxf_error (const char * error) {
-  fprintf (stderr, "line %d pos %d: %s\n", dxf_lineno, dxf_charno, error);
+  fprintf (stderr, "dxf line %d pos %d: %s\n", dxf_lineno, dxf_charno, error);
 //   return 0;
 }
