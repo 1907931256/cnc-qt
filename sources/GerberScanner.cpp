@@ -38,33 +38,83 @@
 #include <QtCore/qmath.h>
 
 #include "includes/Settings.h"
-#include "includes/GCode.h"
+#include "includes/GerberScanner.h"
 #include "includes/MainWindow.h"
 
-
-#include "includes/GData.h"
-
-#include "parse_gcode.h"
-#include "scan_gcode.h"
-
-#include "parse_svg.h"
-#include "scan_svg.h"
 
 #include "parse_gerber.h"
 #include "scan_gerber.h"
 
-#include "parse_dxf.h"
-#include "scan_dxf.h"
+
+#define DEBUG_ARC 0
+
+
+GerberData::GerberData()
+{
+    UnitsType = "";
+
+    // длина всего числа
+    countDigitsX = 1;
+    // длина всего числа
+    countDigitsY = 1;
+    // длина дробной части
+    countPdigX = 0;
+    // длина дробной части
+    countPdigY = 0;
+
+    X_min = 100000;
+    X_max = -100000;
+
+    Y_min = 100000;
+    Y_max = -100000;
+}
+
+
+//
+// Вычисление размерности необходимого массива, для анализа
+//
+// accuracy: Коэфициент уменьшения размеров данных
+void GerberData::CalculateGatePoints(int _accuracy)
+{
+    // немного уменьшим значения
+    foreach (grbPoint VARIABLE, points) {
+        VARIABLE.X = VARIABLE.X / _accuracy;
+        VARIABLE.Y = VARIABLE.Y / _accuracy;
+    }
+
+    foreach (grbPoint VARIABLE, points) {
+        if (VARIABLE.X > X_max) {
+            X_max = VARIABLE.X;
+        }
+
+        if (VARIABLE.X < X_min) {
+            X_min = VARIABLE.X;
+        }
+
+        if (VARIABLE.Y > Y_max) {
+            Y_max = VARIABLE.Y;
+        }
+
+        if (VARIABLE.Y < Y_min) {
+            Y_min = VARIABLE.Y;
+        }
+    }
+
+    // Немного расширим границу
+    X_max += 500;
+    Y_max += 500;
+}
+
+
 
 // is static
-QVector<ParserData> Parser::dataVector;
-QMap<QString, float> Parser::dataVaris;
+QVector<GerberData> GerberParser::dataVector;
 
 /**
  * @brief constructor
  *
  */
-Parser::Parser()
+GerberParser::GerberParser()
 {
 }
 
@@ -72,48 +122,23 @@ Parser::Parser()
  * @brief destructor
  *
  */
-Parser::~Parser()
+GerberParser::~GerberParser()
 {
     dataVector.clear();
 }
 
 
-void Parser::gcodeInit()
-{
-    gcode_lineno = 0;
-    //      gcode_result = NULL;
-    //   gcode_vector = NULL;
-    //   gcode_header = NULL;
-}
-
-void Parser::svgInit()
-{
-    svg_lineno = 0;
-    //      gcode_result = NULL;
-    //   gcode_vector = NULL;
-    //   gcode_header = NULL;
-}
-
-
-void Parser::dxfInit()
-{
-    dxf_lineno = 0;
-    //      gcode_result = NULL;
-    //   gcode_vector = NULL;
-    //   gcode_header = NULL;
-}
-
-
-void Parser::gerberInit()
+void GerberParser::gerberInit()
 {
     gerber_lineno = 0;
-    //      gcode_result = NULL;
-    //   gcode_vector = NULL;
-    //   gcode_header = NULL;
+    //      gerber_result = NULL;
+    //   gerber_vector = NULL;
+    //   gerber_header = NULL;
 }
 
 
-void Parser::gcodeDestroy()
+
+void GerberParser::gerberDestroy()
 {
     //      if (csv_result != NULL) {
     //     // delete associated dataset
@@ -126,21 +151,6 @@ void Parser::gcodeDestroy()
     //   }
 }
 
-void Parser::svgDestroy()
-{
-}
-
-
-void Parser::dxfDestroy()
-{
-}
-
-
-void Parser::gerberDestroy()
-{
-}
-
-
 
 /**
  * @brief read and parse into ParserData list and OpenGL list
@@ -148,113 +158,46 @@ void Parser::gerberDestroy()
  * TODO convert QString to QStringLiteral
  *
  */
-bool Parser::readGCode(char *indata)
+bool GerberParser::read(char *indata)
 {
+    //     GerberData grb;
     int ret = true;
 
     dataVector.clear();
 
-    mut.lock();
+//     mut.lock();
 
-    gcodeInit();
+    gerberInit();
 
     /* because the data in already in buffer 'indata' */
 
-    YY_BUFFER_STATE bs = gcode__scan_string(indata);
-    gcode__switch_to_buffer(bs);
+    YY_BUFFER_STATE bs = gerber__scan_string(indata);
+    gerber__switch_to_buffer(bs);
 
-    if ( gcode_parse() != 0) {
+    if ( gerber_parse() != 0) {
         ret = false;
     }
 
-    gcode_lex_destroy();
+    gerber_lex_destroy();
 
-    mut.unlock();
+//     mut.unlock();
 
     if (!ret) {
-        gcodeDestroy();
+        gerberDestroy();
         return false;
     }
 
-    gcodeDestroy();
+    gerberDestroy();
 
     return true;
 }
 
 
-bool Parser::readSVG(char *indata)
-{
-    int ret = true;
-
-    dataVector.clear();
-
-    mut.lock();
-
-    svgInit();
-
-    /* because the data in already in buffer 'indata' */
-
-    YY_BUFFER_STATE bs = svg__scan_string(indata);
-    svg__switch_to_buffer(bs);
-
-    if ( svg_parse() != 0) {
-        ret = false;
-    }
-
-    svg_lex_destroy();
-
-    mut.unlock();
-
-    if (!ret) {
-        svgDestroy();
-        return false;
-    }
-
-    svgDestroy();
-
-    return true;
-}
-
-
-
-bool Parser::readDXF( char *indata)
-{
-    int ret = true;
-
-    dataVector.clear();
-
-    mut.lock();
-
-    dxfInit();
-
-    /* because the data in already in buffer 'indata' */
-
-    YY_BUFFER_STATE bs = dxf__scan_string(indata);
-    dxf__switch_to_buffer(bs);
-
-    if ( dxf_parse() != 0) {
-        ret = false;
-    }
-
-    dxf_lex_destroy();
-
-    mut.unlock();
-
-    if (!ret) {
-        dxfDestroy();
-        return false;
-    }
-
-    dxfDestroy();
-
-    return true;
-}
-
-
+#if 0
 //
 // gerber reader
 //
-bool Parser::readGBR(char *indata)
+bool GCodeParser::readGBR(char *indata)
 {
     //     GerberData grb;
     int ret = true;
@@ -534,204 +477,16 @@ bool Parser::readGBR(char *indata)
     //System.Diagnostics.Process proc = System.Diagnostics.Process.Start("mspaint.exe", "d:\sample.bmp"); //Запускаем блокнот
     //proc.WaitForExit();//и ждем, когда он завершит свою работу
 }
-
-
-bool Parser::readPLT( char *indata )
-{
-#if 0
-    QList<Point> points;// = new QList<Point>();
-
-    data.clear();
-    //checkedListBox1.Items.clear();
-
-    //  parent->treeView1.Nodes.clear();
-
-    //  TreeNode trc;// = new TreeNode("");
-
-
-    //  qDebug() << "анализ файла";
-
-    int index = 0;
-
-    QTextStream stream(arr);
-    stream.setLocale(QLocale("C"));
-
-    while (!stream.atEnd()) {
-        QString s = stream.readLine();
-
-        //      qDebug() << "анализ файла строка " + QString::number(index);
-        //
-        // begin point
-        if (s.trimmed().mid(0, 2) == "PU") {
-            int pos1 = s.indexOf('U');
-            int pos2 = s.indexOf(' ');
-            int pos3 = s.indexOf(';');
-
-            float posX = s.mid(pos1 + 1, pos2 - pos1 - 1).toFloat();
-            float posY = s.mid(pos2 + 1, pos3 - pos2 - 1).toFloat();
-
-            // Пересчет в милиметры
-            posX = posX / 40.0;
-            posY = posY / 40.0;
-
-            if (data.count() > 0) {
-                //первый раз
-                //   indexList++;
-                //  } else {
-                //   indexList++;
-                //checkedListBox1.Items.Add("линия - " + QString::number(indexList) + ", " + QString::number(points.count()) + " точек");
-                //   trc.Text = "линия - " + QString::number(indexList) + ", " + QString::number(points.count()) + " точек";
-
-                //   data.last().Points <<  points;
-                data << DataCollections(points);
-
-                points.clear();
-                //   points = new QList<Point>();
-
-                //   treeView1.Nodes.Add(trc);
-                //   trc = new TreeNode("");
-            }
-
-            points <<  (Point) {
-                posX, posY
-            };
-        }
-
-        //продолжение
-        if (s.trimmed().mid(0, 2) == "PD") {
-            int pos1 = s.indexOf('D');
-            int pos2 = s.indexOf(' ');
-            int pos3 = s.indexOf(';');
-
-            float posX = s.mid(pos1 + 1, pos2 - pos1 - 1).toFloat();
-            float posY = s.mid(pos2 + 1, pos3 - pos2 - 1).toFloat();
-
-            // convert to mm
-            posX = posX / 40.0;
-            posY = posY / 40.0;
-
-            points <<  (Point) {
-                posX, posY
-            };
-            //  trc.Nodes.Add("Точка - X: " + QString::number(posX) + "  Y: " + QString::number(posY));
-
-        }
-
-        //      s = fs.ReadLine();
-        index++;
-    }
-
-    //  fl.close();
-
-    //  indexList++;
-    //  Instument instr = {0, 0.0}; // number, diameter
-    data <<  DataCollections(points);
-    //checkedListBox1.Items.Add("линия - " + QString::number(indexList) + ", " + QString::number(points.count()) + " точек");
-    //  trc.Text = "линия - " + QString::number(indexList) + ", " + QString::number(points.count()) + " точек";
-    //  data <<  points;
-    //  points = new QList<Point>();
-
-    //  points.clear();
-
-    //  treeView1.Nodes.Add(trc);
-    //  trc = new TreeNode("");
-
-
-    //  qDebug() << "загружено!!!!!!!!";
-    //  fs = null;
 #endif
-    return true;
-
-}
 
 
-bool Parser::readEPS( char *indata)
-{
-    return true;
-}
+/**
+ * @brief
+ *
+ */
+// QVector<ParserData> *GerberParser::dataVector()
+// {
+//     //     qDebug() << "return gerber data" << gCodeList.count();
+//     return &gCodeVector;
+// }
 
-bool Parser::readDRL(char *indata)
-{
-#if 0
-    data.clear();
-
-    QList<Point> points;
-
-    //  StreamcDataManager fs = new StreamcDataManager(tbFile.Text);
-    //  QString s = fs.ReadLine();
-
-    bool isDataDrill = false; //определение того какие сейчас данные, всё что до строки с % параметры инструментов, после - дырки для сверлений
-
-    DataCollections *dc = NULL;
-
-    QTextStream stream(arr);
-    stream.setLocale(QLocale("C"));
-
-    while (!stream.atEnd()) {
-        QString s = stream.readLine();
-
-        if (s.trimmed().mid(0, 1) == "%") {
-            isDataDrill = true;
-        }
-
-        if (!isDataDrill && s.trimmed().mid(0, 1) == "T") { //описание инструмента
-            // На данном этапе в список добавляем интрумент, без точек сверловки
-            int numInstrument = s.trimmed().mid(1, 2).toInt();
-
-            int pos1 = s.indexOf('C');
-            float diametr = s.mid(pos1 + 1).replace(Settings::fromDecimalPoint, Settings::toDecimalPoint).toFloat();
-
-            data << DataCollections(QList<Point>(), (Instrument) {
-                numInstrument, diametr
-            });
-        }
-
-        if (isDataDrill && s.trimmed().mid(0, 1) == "T") {
-            //начало сверловки данным инструментом
-            int numInstrument = s.trimmed().mid(1, 2).toInt();
-
-            foreach (DataCollections VARIABLE, data) {
-                if (VARIABLE.intrument.Number == numInstrument) {
-                    dc = &VARIABLE;
-                }
-            }
-        }
-
-        if (isDataDrill && s.trimmed().mid(0, 1) == "X") {
-            int pos1 = s.indexOf('X');
-            int pos2 = s.indexOf('Y');
-
-            float posX = s.mid(pos1 + 1, 7).toFloat() / 100.0;
-            float posY = s.mid(pos2 + 1, 7).toFloat() / 100.0;
-
-            dc->points <<  (Point) {
-                posX, posY
-            };
-        }
-
-        //      s = fs.ReadLine();
-    }
-
-    //  fs = null;
-    //  fl.close();
-
-    //  treeView1.Nodes.clear();
-    //
-    //  foreach (DataCollections VARIABLE, data) {
-    //      TreeNode trc = new TreeNode("Сверловка - " + QString::number(VARIABLE.intrument.Diametr));
-    //
-    //      foreach (Point VARIABLE2, VARIABLE.Points) {
-    //  trc.Nodes.Add("Точка - X: " + QString::number(VARIABLE2.X) + "  Y: " + QString::number(VARIABLE2.Y));
-    //      }
-    //      treeView1.Nodes.Add(trc);
-    //  }
-
-    //TreeNode trc = new TreeNode("");
-    //qDebug() << "анализ файла";
-
-    //int index = 0;
-    //int indexList = -1;
-#endif
-    return true;
-
-}

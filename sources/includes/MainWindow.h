@@ -58,7 +58,7 @@
 
 #include "GLWidget.h"
 
-#include "GCode.h"
+// #include "GCode.h"
 #include "DataManager.h"
 #include "mk1Controller.h"
 #include "Geometry.h"

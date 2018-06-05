@@ -36,7 +36,7 @@
  * @brief consructor
  *
  */
-ParserData::ParserData()
+GData::GData()
 {
     numberLine = 0;
     decoded = true;
@@ -62,7 +62,7 @@ ParserData::ParserData()
  * @brief constructor based on command
  *
  */
-ParserData::ParserData(ParserData *d)
+GData::GData(GData *d)
 {
     gCmd = -1;
     gExtCmd = -1;

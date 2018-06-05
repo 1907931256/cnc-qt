@@ -30,64 +30,137 @@
  ****************************************************************************/
 
 
-#ifndef GCODE_H
-#define GCODE_H
+#ifndef GERBER_H
+#define GERBER_H
 
 #include <QString>
-#include <QMutex>
-#include <QMap>
 #include <QList>
-#include <QObject>
 #include <QVector>
 #include <QVector3D>
 
+// #include "GData.h"
 
 
 /* Externalize variables used by the scanner and parser. */
 
-#include "GData.h"
 
+enum Apertures {
+    C_circle,
+    R_rectangle,
+    O_obround,
+    P_polygon
+};
 
-class Parser : public QObject
-{
-        Q_OBJECT
-    public:
-        explicit Parser(); // constructor
-        ~Parser(); // destructor
+struct typeSpline {
+    int number;
+    Apertures aperture;
+    float size1;
+    float size2;
 
-        bool readGCode(char *indata);
-        bool readSVG(char *indata);
-
-        bool readGBR( char *indata );
-        bool readDRL( char *indata );
-        bool readDXF( char *indata );
-        bool readEPS( char *indata );
-        bool readPLT( char *indata );
-
-
-    private:
-        void gcodeInit();
-        void gcodeDestroy();
-
-        void svgInit();
-        void svgDestroy();
-
-        void dxfInit();
-        void dxfDestroy();
-        
-        void gerberInit();
-        void gerberDestroy();
-
-    signals:
-        void logMessage(const QString &l);
-
-    public:
-        // vector of parsed but not checked data
-        static QVector<ParserData> dataVector;
-        // vector of variables
-        static QMap<QString, float> dataVaris;
-        QMutex mut;
+    //     public typeSpline(int _number, Apertures _aperture, float _size1 = 0, float _size2 = 0)
+    //     {
+    //         number = _number;
+    //         aperture = _aperture;
+    //         size1 = _size1;
+    //         size2 = _size2;
+    //     }
 };
 
 
-#endif
+
+// gerber point descriptor
+struct grbPoint {
+    int X;
+    int Y;
+    QString typePoint; // D1 - видимое движение D2 - невидимое движение D3 - точка
+    int numberSplane;
+
+    //     public grbPoint(int _x, int _y, QString _typePoint, int _numberSplane)
+    //     {
+    //         X = _x;
+    //         Y = _y;
+    //         typePoint = _typePoint;
+    //         numberSplane = _numberSplane;
+    //     }
+};
+
+
+// point descriptor
+struct Point {
+    float X;
+    float Y;
+    bool visible; //data to view
+    int size; //line size
+
+    //     public Point(float _x, float _y, bool _visible = true, int _size = 1)
+    //     {
+    //         X = _x;
+    //         Y = _y;
+    //         visible = _visible;
+    //         size = _size;
+    //     }
+};
+
+
+
+///
+/// class for gerber file
+///
+class GerberData
+{
+        ///
+        /// messure units, mm or inches
+    public:
+        QString UnitsType;
+
+        ///
+        /// spline types
+        ///
+        QList<typeSpline> typeSplines;
+
+        ///
+        /// points from file
+        ///
+        QList<grbPoint> points;
+
+        // length of number
+        int countDigitsX;
+        int countDigitsY;
+        // length of digs after dec.point
+        int countPdigX;
+        int countPdigY;
+
+        int X_min;
+        int X_max;
+
+        int Y_min;
+        int Y_max;
+
+    public:
+        GerberData();
+        void CalculateGatePoints(int _accuracy);
+
+};
+
+
+
+
+class GerberParser 
+{
+    public:
+        explicit GerberParser(); // constructor
+        ~GerberParser(); // destructor
+
+//         QVector<GerberData> *dataVector();
+        static bool read(char *indata);
+
+    private:
+        static void gerberInit();
+        static void gerberDestroy();
+
+   public:
+        static QVector<GerberData> dataVector;
+};
+
+
+#endif // GERBER_H

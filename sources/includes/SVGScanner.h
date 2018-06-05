@@ -1,9 +1,10 @@
-/* -*-c-*- */
-
-%{
 /****************************************************************************
+ * Main developer, C# developing:                                           *
+ * Copyright (C) 2014-2016 by Sergey Zheigurov                              *
+ * Russia, Novy Urengoy                                                     *
+ * zheigurov@gmail.com                                                      *
+ *                                                                          *
  * C# to Qt portation, Linux developing                                     *
- * flex/bison DXF parser                                                    *
  * Copyright (C) 2015-2018 by Eduard Kalinowski                             *
  * Germany, Lower Saxony, Hanover                                           *
  * eduard_kalinowski@yahoo.de                                               *
@@ -28,107 +29,79 @@
  * License along with CNC-Qt. If not, see  http://www.gnu.org/licenses      *
  ****************************************************************************/
 
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-register"
-#endif
 
-#if HAVE_CONFIG_H
-# include <config.h>
-#endif
+#ifndef SVG_H
+#define SVG_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+#include <QString>
+#include <QList>
+#include <QVector>
+#include <QVector3D>
 
-#ifdef __MINGW32__
-#include <io.h>
-#endif
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
+// #include "GData.h"
 
 
-
-#if !HAVE_STRCHR
-# define strchr  index
-# define strrchr rindex
-#endif
+/* Externalize variables used by the scanner and parser. */
 
 
-// this generated header file from parse_dxf.ypp
-#include "parse_dxf.h"
+///
+/// class for gerber file
+///
+class SVGData
+{
+        ///
+        /// messure units, mm or inches
+    public:
+        QString UnitsType;
 
+        ///
+        /// spline types
+        ///
+//         QList<typeSpline> typeSplines;
 
-#include "Settings.h"
-#include "DXFScanner.h"
+        ///
+        /// points from file
+        ///
+//         QList<grbPoint> points;
 
-extern int dxf_lineno;
-int dxf_charno = 1;
+        // length of number
+        int countDigitsX;
+        int countDigitsY;
+        // length of digs after dec.point
+        int countPdigX;
+        int countPdigY;
 
-#define YY_USER_ACTION dxf_charno += dxf_leng; 
+        int X_min;
+        int X_max;
 
-%}
+        int Y_min;
+        int Y_max;
 
+    public:
+        SVGData();
+//         void CalculateGatePoints(int _accuracy);
 
-
-WSPACE   [ \t\r\f]+
-EOL      [\n]+
-DIGITS   [0-9]+
-DEF      [A-Z0-9_\-]+
-INTEGER  [+-]?{DIGITS}
-REAL1    [+-]?{DIGITS}?[.]{DIGITS}
-REAL2    [+-]?{DIGITS}[.]{DIGITS}?
-VARI     \$[A-Z_\-]+
-SYMBOL   [\.\"\|\@\*\{\}]
+};
 
 
 
-%option caseless yylineno noyywrap nounput noinput prefix="dxf_"
+
+class SVGParser 
+{
+    public:
+        explicit SVGParser(); // constructor
+        ~SVGParser(); // destructor
+
+//         QVector<ParserData> *dataVector();
+        static bool read(char *indata);
+
+    private:
+        static void svgInit();
+        static void svgDestroy();
+
+   public:
+        static QVector<SVGData> dataVector;
+};
 
 
-%%
-
-{INTEGER} { 
-    dxf_lval.i_val = atoi(dxf_text); 
-    return INT; 
-}
-
-{DEF} {
-    dxf_lval.s_val = strdup(dxf_text);
-    return STR;
-}
-
-{SYMBOL} {
-    dxf_lval.c_val = dxf_text[0]; 
-    return SYM;
-}
-
-{VARI} {
-    dxf_lval.s_val = strdup(dxf_text);
-    return VARIABLE;
-}
-
-{REAL1}|{REAL2} {
-    std::string s = dxf_text;
-    std::replace( s.begin(), s.end(), Settings::toDecimalPoint, Settings::fromDecimalPoint);
-    dxf_lval.f_val = atof(s.c_str());
-    
-    return FLOAT;
-}
-
-{EOL} { dxf_charno = 1; /* nothing */ }
-
-
-<*>{WSPACE}  { /* skip end of line and spaces */ }
-
-<*>. { /* any other character is invalid */
-  fprintf (stderr, "dxf line %d pos %d: syntax error, unrecognized character: `%s'\n", dxf_lineno, dxf_charno, dxf_text);
-   return InvalidCharacter;
-}
-
-%%
-
-                  
+#endif // GERBER_H

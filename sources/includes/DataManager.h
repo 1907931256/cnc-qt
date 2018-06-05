@@ -40,12 +40,18 @@
 #include <QString>
 #include <QStringList>
 #include <QMutexLocker>
-// #include <QMutex>
+#include <QMutex>
 #include <QPair>
 
-#include "GCode.h"
+#include "GCodeScanner.h"
+#include "GerberScanner.h"
+#include "SVGScanner.h"
+#include "DXFScanner.h"
 
 class GCodeParser;
+class GerberParser;
+class DXFParser;
+class SVGParser;
 
 
 // #define COORD_TOO_BIG 10e6
@@ -105,12 +111,19 @@ struct GCodeOptim {
 
 // class for reading of different formats
 
-class cDataManager : public Parser // , public cTranslator
+class cDataManager : public QObject //: public Parser // , public cTranslator
 {
+    Q_OBJECT 
+    
+//     friend class GCodeParser;
+//     friend class GerberParser;
+//     friend class DXFParser;
+//     friend class SVGParser;
+        
     public:
         cDataManager();
         ~cDataManager();
-#if 1
+#if 0
         void BresenhamLine(QVector<QVector<quint8> > &p, int x0, int y0, int x1, int y1, typeSpline _Splane);
         void BresenhamCircle(QVector<QVector<quint8> > &p,  int x0, int y0, int radius, quint8 setvalue = 4, bool needFill = false);
 #endif
@@ -127,8 +140,8 @@ class cDataManager : public Parser // , public cTranslator
         void fixSerialList();
 
     public:
-        QList<DataCollections> data;
-        QVector<QPair<float, QVector<QVector2D> > > layers;
+//         QList<DataCollections> data;
+//         QVector<QPair<float, QVector<QVector2D> > > layers;
         //         std::vector<Vec3f> cached_lines;
         //         std::vector<Vec3f> cached_arcs;
         //         std::vector<Vec3f> cached_points;
@@ -139,9 +152,16 @@ class cDataManager : public Parser // , public cTranslator
         QVector<QString> *getFilteredList();
         //         QString lastDir;
 
+        friend bool GCodeParser::read(char *indata);
+        friend bool SVGParser::read(char *indata);
+        friend bool GerberParser::read(char *indata);
+        friend bool DXFParser::read(char *indata);
         //             signals:
         //                 void logMessage(const QString &s);
 
+    signals:
+        void logMessage(const QString &l);
+        
     private:
 
         enum typeFileLoad {
@@ -176,8 +196,6 @@ class cDataManager : public Parser // , public cTranslator
 
         void detectMinMax(const QVector3D& v);
 
-        //         bool readGCode( const QByteArray &gcode );
-
     protected:
         void sortGCode(const QVector<int> &antdata);
         void antColonyOptimization();
@@ -187,7 +205,7 @@ class cDataManager : public Parser // , public cTranslator
     private:
         //         QVector<VertexData> vertexVector;
         QVector<SerialData*> serialDataVector;
-
+        QVector<GData>   dataVector;
         QVector<QString> filteredList; // only decoded G-code
         QVector<QString> originalList; // only decoded G-code
 
@@ -203,6 +221,8 @@ class cDataManager : public Parser // , public cTranslator
 
         float maxLookaheadAngleRad;
         typeFileLoad TypeFile;// = typeFileLoad.None;
+        
+        QMutex mut;
 };
 
 

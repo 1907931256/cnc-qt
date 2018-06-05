@@ -50,12 +50,9 @@
 
 
 #include "Settings.h"
-
-#include "Gerber.h"
+#include "GerberScanner.h"
 
 /*
-
-
 // static int gerberlineno = 0;*/
 extern int gerber_parse (void);
 extern void gerber_error (const char *c);
@@ -66,7 +63,7 @@ extern int gerber_lineno;
 
 
 // init of first gerber data
-ParserData *gerber_data;// = new GerberData();
+GerberData *gerber_data;// = new GerberData();
 
 %}
 
@@ -185,7 +182,7 @@ gline:  X_PAR
         }
         | NEW_LINE
         {
-            Parser::dataVector << *gerber_data;
+            GerberParser::dataVector << *gerber_data;
         }
         ;
 

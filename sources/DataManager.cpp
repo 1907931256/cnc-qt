@@ -39,9 +39,7 @@
 #include <QtCore/qmath.h>
 
 #include "includes/Settings.h"
-#include "includes/GCode.h"
 #include "includes/DataManager.h"
-
 
 
 #define DEBUG_ARC 0
@@ -59,7 +57,6 @@ cDataManager::cDataManager()
 cDataManager::~cDataManager()
 {
     gCities.clear();
-
     dataVector.clear();
     filteredList.clear();
     originalList.clear();
@@ -109,7 +106,7 @@ QVector<SerialData*> *cDataManager::getSerialVector()
 
 void cDataManager::checkCity(const QVector3D &current_pos, int pos)
 {
-    ParserData d = dataVector.at(pos);
+    GData d = dataVector.at(pos);
     QVector3D delta_pos;
     delta_pos = d.coord - dataVector.at(pos - 1).coord;
 
@@ -219,7 +216,7 @@ void cDataManager::dataChecker()
 
     // the first pos (cur = 0) is 0 or home
     for(int cur = 1; cur < dataVector.count(); cur++) {
-        ParserData d = dataVector.at(cur);
+        GData d = dataVector.at(cur);
 
         if (d.decoded == false) {
             qInfo() << "not decoded line" << d.numberLine;
@@ -545,7 +542,7 @@ void cDataManager::fixSerialList()
 #if 0
 
     // now debug
-    foreach (const ParserData d, gCodeList) {
+    foreach (const GData d, gCodeList) {
         qDebug() << "line:" << d.numberLine << "accel:" << (hex) << d.movingCode << (dec) << "max coeff:" << d.vectorCoeff << "splits:" <<  d.arcSplits
                  << "steps:" << d.stepsCounter << "vector speed:" << d.vectSpeed << "coords:" << d.X << d.Y << "delta angle:" << d.deltaAngle;
     }
@@ -987,7 +984,7 @@ void cDataManager::sortGCode(const QVector<int> &citydata)
 {
     QVector<QString> tmpOrigList; // for the display list
     QVector<QString> tmpFilteredList; // for the display list
-    QVector<ParserData> tmpGCodeList; // serial data
+    QVector<GData> tmpGCodeList; // serial data
     QVector<VertexData> tmpVertexVector; // for the visualisation
 
     for(int n = 0; n < citydata.size(); n++) {
@@ -1048,7 +1045,7 @@ void cDataManager::sortGCode(const QVector<int> &citydata)
  * @brief
  *
  */
-bool cDataManager::addLine(ParserData *c)
+bool cDataManager::addLine(GData *c)
 {
 }
 
@@ -1057,7 +1054,7 @@ bool cDataManager::addLine(ParserData *c)
  * @brief
  *
  */
-bool cDataManager::addArc(ParserData *c)
+bool cDataManager::addArc(GData *c)
 {
 }
 #endif
@@ -1208,8 +1205,8 @@ void cDataManager::convertArcToLines(int p)
         return;
     }
 
-    ParserData &d = dataVector[p];
-    ParserData &begData = dataVector[p - 1];
+    GData &d = dataVector[p];
+    GData &begData = dataVector[p - 1];
 
     if (!(d.gCmd == 2 || d.gCmd == 3) ) { // it's not arc
         return;
@@ -1668,12 +1665,12 @@ bool cDataManager::readFile(const QString &fileName)
             break;
         }
     }
-    
+
     if (TypeFile == GBR) { // extended gerber
         QTime tMess;
         tMess.start();
         
-        bool res = readGBR(arr.data());
+        bool res = GerberParser::read(arr.data());
 
         originalList.clear();
         //         originalList = QString(arr).split("\n").toVector();s
@@ -1693,7 +1690,7 @@ bool cDataManager::readFile(const QString &fileName)
         QTime tMess;
         tMess.start();
 
-        bool res = readGCode(arr.data());
+        bool res = GCodeParser::read(arr.data());
 
         originalList.clear();
         originalList = QString(arr).split("\n").toVector();
@@ -1733,7 +1730,7 @@ bool cDataManager::readFile(const QString &fileName)
         QTime tMess;
         tMess.start();
 
-        bool res = readSVG(arr.data());
+        bool res = SVGParser::read(arr.data());
 
         originalList.clear();
         originalList = QString(arr).split("\n").toVector();
@@ -1752,7 +1749,7 @@ bool cDataManager::readFile(const QString &fileName)
         QTime tMess;
         tMess.start();
 
-        bool res = readDXF(arr.data());
+        bool res = DXFParser::read(arr.data());
 
         originalList.clear();
         //         originalList = QString(arr).split("\n").toVector();s
@@ -1768,13 +1765,13 @@ bool cDataManager::readFile(const QString &fileName)
     }
 
 
-
+#if 0
     if ( TypeFile == PLT ) { // plotter format
         bool res = readPLT(arr.data());
 
         return res;
     }
-#if 0
+
     if ( detectArray.indexOf("") >= 0 ) { // eps
         TypeFile = EPS;
         bool res = readEPS(arr.data());
@@ -1819,7 +1816,7 @@ void cDataManager::Swap(int &p1, int &p2)
     p2 = p;
 }
 
-
+#if 0
 //
 // Заполнение в матрицы окружностью
 //
@@ -1972,4 +1969,4 @@ void cDataManager::BresenhamLine(QVector<QVector<quint8> > &arrayPoint, int x0, 
     }
 }
 
-
+#endif

@@ -65,14 +65,13 @@
 #include "parse_gcode.h"
 
 #include "Settings.h"
-#include "GCode.h"
+#include "GCodeScanner.h"
 
 
 extern int gcode_lineno;
 int gcode_charno = 1;
 
 #define YY_USER_ACTION gcode_charno += gcode_leng; 
-  
   
 %}
 
@@ -84,7 +83,7 @@ PARAM    [A-FH-MP-Z]
 INTEGER  [+-]?{DIGITS}
 REAL1    [+-]?{DIGITS}?[.,]{DIGITS}
 REAL2    [+-]?{DIGITS}[.,]{DIGITS}?
-VARI     #[\<\>A-Z0-9_]+
+VARI     #[\<\>A-Z0-9_\-]+
 EOL      [\n]+
 OPER     [\+\-\/\*\=\[\]]
 
@@ -108,7 +107,7 @@ SQRT     "SQRT"
 
 
 %option caseless yylineno noyywrap nounput noinput prefix="gcode_"
-
+%option default
 
 %%
 

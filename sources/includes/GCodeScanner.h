@@ -30,86 +30,38 @@
  ****************************************************************************/
 
 
-#ifndef GERBER_H
-#define GERBER_H
+#ifndef GCODE_H
+#define GCODE_H
 
 #include <QString>
-#include <QMutex>
+#include <QMap>
 #include <QList>
-#include <QObject>
 #include <QVector>
 #include <QVector3D>
 
+
+/* Externalize variables used by the scanner and parser. */
 #include "GData.h"
 
 
-/* Externalize variables used by the scanner and parser. */
-
-
-///
-/// class for gerber file
-///
-class GerberData
+class GCodeParser 
 {
-        ///
-        /// messure units, mm or inches
     public:
-        QString UnitsType;
+        explicit GCodeParser(); // constructor
+        ~GCodeParser(); // destructor
 
-        ///
-        /// spline types
-        ///
-        QList<typeSpline> typeSplines;
-
-        ///
-        /// points from file
-        ///
-        QList<grbPoint> points;
-
-        // length of number
-        int countDigitsX;
-        int countDigitsY;
-        // length of digs after dec.point
-        int countPdigX;
-        int countPdigY;
-
-        int X_min;
-        int X_max;
-
-        int Y_min;
-        int Y_max;
-
-    public:
-        GerberData();
-        void CalculateGatePoints(int _accuracy);
-
-};
-
-
-
-
-class Gerber : public QObject
-{
-        Q_OBJECT
-    public:
-        explicit Gerber(); // constructor
-        ~Gerber(); // destructor
-
-        QVector<ParserData> *dataVector();
-        bool readGCode(char *indata);
+        static bool read(char *indata);
 
     private:
-        void gerberInit();
-        void gerberDestroy();
-
-
-    signals:
-        void logMessage(const QString &l);
+        static void gcodeInit();
+        static void gcodeDestroy();
 
     public:
-        static QVector<ParserData> gCodeVector;
-        QMutex mut;
+        // vector of parsed but not checked data
+        static QVector<GData> dataVector;
+        // vector of variables
+        static QMap<QString, float> dataVaris;
 };
 
 
-#endif // GERBER_H
+#endif

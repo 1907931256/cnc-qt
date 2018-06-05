@@ -118,13 +118,6 @@ class DataOperation
 };
 
 
-enum Apertures {
-    C_circle,
-    R_rectangle,
-    O_obround,
-    P_polygon
-};
-
 // possible data types
 enum typeCollections {
     Points,
@@ -132,7 +125,7 @@ enum typeCollections {
     Property,
 };
 
-
+#if 0
 struct typeSpline {
     int number;
     Apertures aperture;
@@ -182,7 +175,7 @@ struct Point {
     //         size = _size;
     //     }
 };
-
+#endif
 // tool descriptor
 struct Instrument {
     int Number;
@@ -195,7 +188,7 @@ struct Instrument {
     //     }
 };
 
-
+#if 0
 //
 class DataCollections
 {
@@ -216,7 +209,7 @@ class DataCollections
         QList<Point> points;
         Instrument intrument;
 };
-
+#endif 
 
 enum PlaneEnum {
     None = 0,
@@ -338,7 +331,7 @@ struct addParam {
 //
 // parsed data
 //
-class ParserData
+class GData
 {
     public:
         short gCmd;
@@ -371,10 +364,10 @@ class ParserData
     public:
         //
         // null constructor
-        ParserData();
+        GData();
 
         // constructor with copy from last data
-        ParserData(ParserData *_cmd);
+        GData(GData *_cmd);
 
         // for mathematical operations and other
         QVector<class DataOperation*> opVector;

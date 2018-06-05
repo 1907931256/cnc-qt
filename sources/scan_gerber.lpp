@@ -58,12 +58,12 @@
 #endif
 
 
+#include "Settings.h"
+#include "GerberScanner.h"
+
 // this generated header file from parse_gerber.ypp
 #include "parse_gerber.h"
 
-
-#include "Settings.h"
-#include "Gerber.h"
 
 extern int gerber_lineno;
 int gerber_charno = 1;

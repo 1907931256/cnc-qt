@@ -52,7 +52,7 @@
 
 #include "Settings.h"
 
-#include "GData.h"
+#include "SVGScanner.h"
 
 /*
 
@@ -67,7 +67,7 @@ extern int svg_lineno;
 
 
 // initializing for vector
-ParserData *svg_data = new ParserData();
+SVGData *svg_data = new SVGData();
 
 
 %}

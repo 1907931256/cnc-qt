@@ -51,7 +51,7 @@
 
 #include "Settings.h"
 
-#include "Gerber.h"
+#include "DXFScanner.h"
 
 /*
 

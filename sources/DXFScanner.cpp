@@ -38,20 +38,18 @@
 #include <QtCore/qmath.h>
 
 #include "includes/Settings.h"
-#include "includes/Gerber.h"
+#include "includes/DXFScanner.h"
 #include "includes/MainWindow.h"
 
 
-#include "includes/GData.h"
-
-#include "parse_gerber.h"
-#include "scan_gerber.h"
+#include "parse_dxf.h"
+#include "scan_dxf.h"
 
 
 #define DEBUG_ARC 0
 
 
-GerberData::GerberData()
+DXFData::DXFData()
 {
     UnitsType = "";
 
@@ -71,12 +69,12 @@ GerberData::GerberData()
     Y_max = -100000;
 }
 
-
+#if 0
 //
 // Вычисление размерности необходимого массива, для анализа
 //
 // accuracy: Коэфициент уменьшения размеров данных
-void GerberData::CalculateGatePoints(int _accuracy)
+void DXFData::CalculateGatePoints(int _accuracy)
 {
     // немного уменьшим значения
     foreach (grbPoint VARIABLE, points) {
@@ -107,16 +105,16 @@ void GerberData::CalculateGatePoints(int _accuracy)
     Y_max += 500;
 }
 
-
+#endif
 
 // is static
-QVector<ParserData> Gerber::gCodeVector;
+QVector<DXFData> DXFParser::dataVector;
 
 /**
  * @brief constructor
  *
  */
-Gerber::Gerber()
+DXFParser::DXFParser()
 {
 }
 
@@ -124,15 +122,15 @@ Gerber::Gerber()
  * @brief destructor
  *
  */
-Gerber::~Gerber()
+DXFParser::~DXFParser()
 {
-    gCodeVector.clear();
+    dataVector.clear();
 }
 
 
-void Gerber::gerberInit()
+void DXFParser::dxfInit()
 {
-    gerber_lineno = 0;
+    dxf_lineno = 0;
     //      gerber_result = NULL;
     //   gerber_vector = NULL;
     //   gerber_header = NULL;
@@ -140,7 +138,7 @@ void Gerber::gerberInit()
 
 
 
-void Gerber::gerberDestroy()
+void DXFParser::dxfDestroy()
 {
     //      if (csv_result != NULL) {
     //     // delete associated dataset
@@ -160,35 +158,35 @@ void Gerber::gerberDestroy()
  * TODO convert QString to QStringLiteral
  *
  */
-bool Gerber::readGCode(char *indata)
+bool DXFParser::read( char *indata)
 {
     int ret = true;
 
-    gCodeVector.clear();
+    dataVector.clear();
 
-    mut.lock();
+//     mut.lock();
 
-    gerberInit();
+    dxfInit();
 
     /* because the data in already in buffer 'indata' */
 
-    YY_BUFFER_STATE bs = gerber__scan_string(indata);
-    gerber__switch_to_buffer(bs);
+    YY_BUFFER_STATE bs = dxf__scan_string(indata);
+    dxf__switch_to_buffer(bs);
 
-    if ( gerber_parse() != 0) {
+    if ( dxf_parse() != 0) {
         ret = false;
     }
 
-    gerber_lex_destroy();
+    dxf_lex_destroy();
 
-    mut.unlock();
+//     mut.unlock();
 
     if (!ret) {
-        gerberDestroy();
+        dxfDestroy();
         return false;
     }
 
-    gerberDestroy();
+    dxfDestroy();
 
     return true;
 }
@@ -199,9 +197,9 @@ bool Gerber::readGCode(char *indata)
  * @brief
  *
  */
-QVector<ParserData> *Gerber::dataVector()
-{
-    //     qDebug() << "return gerber data" << gCodeList.count();
-    return &gCodeVector;
-}
+// QVector<ParserData> *DXFParser::dataVector()
+// {
+//     //     qDebug() << "return gerber data" << gCodeList.count();
+//     return &gCodeVector;
+// }
 
