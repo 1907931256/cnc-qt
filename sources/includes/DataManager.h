@@ -205,9 +205,12 @@ class cDataManager : public QObject //: public Parser // , public cTranslator
     private:
         //         QVector<VertexData> vertexVector;
         QVector<SerialData*> serialDataVector;
+        
         QVector<GData>   dataVector;
         QVector<QString> filteredList; // only decoded G-code
-        QVector<QString> originalList; // only decoded G-code
+        QVector<QString> originalList; // original 
+        QVector<GCodeOptim> gCities;
+
 
         // for the control data
         MData *currentMCmd;
@@ -217,8 +220,7 @@ class cDataManager : public QObject //: public Parser // , public cTranslator
         QVector<int> occup;
         QVector <QVector <float> > distance;
 
-        QVector<GCodeOptim> gCities;
-
+        
         float maxLookaheadAngleRad;
         typeFileLoad TypeFile;// = typeFileLoad.None;
         

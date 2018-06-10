@@ -111,160 +111,174 @@ OPER     [\(\)]
     /* skip */
 }
 
-<INITIAL>{BEG}\?.*\?{END} { 
-    /* fisrt xml line 
-     * TODO: encoding */ 
-} 
+<INITIAL>{
+    {BEG}\?.*\?{END} { 
+        /* fisrt xml line 
+        * TODO: encoding */ 
+    } 
 
-<INITIAL>{BEG}"!--".*"--"{END} {
-    /* ignore comments */
-} 
+    {BEG}"!--".*"--"{END} {
+        /* ignore comments */
+    } 
 
-<INITIAL>{BEG} {
-    yy_push_state(TAG);
-}
-
-<TAG>\/{ID}{END} {  /* end of tag */
-    yy_pop_state();
-}
-
-<TAG>"/"{END} { /* end of tag */
-    yy_pop_state();
-}
-
-<TAG>{ID} {
-    svg_lval.s_val = strdup(svg_text);
-    yy_push_state(ATTRIB);
-    return NAME;
-}
-
-<ATTRIB>{END} {
-    yy_pop_state();
-}
-
-<ATTRIB>{ID} {
-    svg_lval.s_val = strdup(svg_text);
-    return NAME;
-}
-
-<ATTRIB>"=" {
-    /* ignore this part */
-}
-
-<ATTRIB>"\"" { 
-    /* begin of datafield */
-    yy_push_state(DATAFIELD);
-}
-
-<DATAFIELD>"\"" {
-    /* end of datafield */
-    yy_pop_state();
-}
-
-<DATAFIELD>{WSPACE}+ {
-    return ' ';
-}
-
-<DATAFIELD>{EOL} {
-    svg_charno = 1;
-    /* ignore */
-}
-
-<DATAFIELD,ATTRIB>{URL} { 
-    /* ignore this part */
-    /*return NEW_LINE;*/
-}
-
-<DATAFIELD>{HEXNUM} {
-    svg_lval.i_val = strtol(&svg_text[1], NULL, 16);
-    return HEXVAL;
-}
-
-<DATAFIELD>{IDNAME}":" {
-    svg_lval.s_val = strndup(svg_text, strlen(svg_text)-1);
-    return STR;
-}
-
-<DATAFIELD>{OPER} {
-    /* svg_lval.c_val = svg_text[0]; 
-    return OPER; */
-}
-
-<DATAFIELD>{INTEGER} { 
-    svg_lval.f_val = (float)strtol(svg_text, NULL, 10); 
-    return FLOAT; 
-}
-
-<DATAFIELD>{PARAM}{WSPACE}? { 
-    switch (svg_text[0]) {
-        case 'M': // moveto x y
-            return MOVE_ABS;
-        case 'm': // moveto dx dy
-            return MOVE_REL;
-        case 'L': // lineto 
-            return LINETO_ABS;
-        case 'l': // lineto dx dy
-            return LINETO_REL;
-        case 'H': // horizontal lineto
-            return HLINE_ABS;
-        case 'h': // horizontal lineto dx
-            return HLINE_REL;
-        case 'V': // vertical lineto
-            return VLINE_ABS;
-        case 'v': // vertical lineto dy
-            return VLINE_REL;
-        case 'C': // curveto
-            return CURVE_ABS;
-        case 'c': // curveto dx dy
-            return CURVE_REL;
-        case 'S': // smooth curveto 
-            return SMOOTH_ABS;
-        case 's': // smooth curveto 
-            return SMOOTH_REL;
-        case 'Q': // quadratic Bézier curve 
-            return QCURVE_ABS;
-        case 'q': // quadratic Bézier curve 
-            return QCURVE_REL;
-        case 'T': // smooth quadratic Bézier curveto 
-            return SMOOTH_QCURVE_ABS;
-        case 't': // smooth quadratic Bézier curveto 
-            return SMOOTH_QCURVE_REL;
-        case 'A': // elliptical Arc 
-            return ARC_ABS;
-        case 'a': // elliptical Arc 
-            return ARC_REL;
-        case 'Z': // closepath
-        case 'z': 
-            return CLOSEPATH;
-        default:
-            fprintf (stderr, "line %d: syntax error, unrecognized character: `%s'\n", svg_lineno, svg_text);
-            return InvalidCharacter;
-            break;
+    {BEG} {
+        yy_push_state(TAG);
     }
-    
-    /*return CHAR; */
 }
 
-<DATAFIELD>{VERS}{WSPACE}{REL} {
-    svg_lval.s_val = strdup(svg_text);
-    return STR;
+
+<TAG>{
+    \/{ID}{END} {  /* end of tag */
+        yy_pop_state();
+    }
+
+    "/"{END} { /* end of tag */
+        yy_pop_state();
+    }
+
+    {ID} {
+        svg_lval.s_val = strdup(svg_text);
+        yy_push_state(ATTRIB);
+        return NAME;
+    }
 }
 
-<DATAFIELD>"," { 
-    /* separator for real numbers pairs */
-    return ' ';
+<ATTRIB>{
+    {END} {
+        yy_pop_state();
+    }
+
+    {ID} {
+        svg_lval.s_val = strdup(svg_text);
+        return NAME;
+    }
+
+    "=" {
+        /* ignore this part */
+    }
+
+    "\"" { 
+        /* begin of datafield */
+        yy_push_state(DATAFIELD);
+    }
+
+    {URL} { 
+        /* ignore this part */
+        /*return NEW_LINE;*/
+    }
 }
 
-<DATAFIELD>{REAL1}|{REAL2}|{REAL3} {
-    std::string s = svg_text;
-    std::replace( s.begin(), s.end(), Settings::toDecimalPoint, Settings::fromDecimalPoint);
-    svg_lval.f_val = strtof(s.c_str(), NULL);
-    return FLOAT;
-}
+<DATAFIELD>{
+    "\"" {
+        /* end of datafield */
+        yy_pop_state();
+    }
 
-<DATAFIELD>{ANY_TEXT} {
-    svg_lval.s_val = strdup(svg_text);
-    return STR;
+    {WSPACE}+ {
+        return ' ';
+    }
+
+    {EOL} {
+        svg_charno = 1;
+        /* ignore */
+    }
+
+    {URL} { 
+        /* ignore this part */
+        /*return NEW_LINE;*/
+    }
+
+    {HEXNUM} {
+        svg_lval.i_val = strtol(&svg_text[1], NULL, 16);
+        return HEXVAL;
+    }
+
+    {IDNAME}":" {
+        svg_lval.s_val = strndup(svg_text, strlen(svg_text)-1);
+        return STR;
+    }
+
+    {OPER} {
+        /* svg_lval.c_val = svg_text[0]; 
+        return OPER; */
+    }
+
+    {INTEGER} { 
+        svg_lval.f_val = (float)strtol(svg_text, NULL, 10); 
+        return FLOAT; 
+    }
+
+    {PARAM}{WSPACE}? { 
+        switch (svg_text[0]) {
+            case 'M': // moveto x y
+                return MOVE_ABS;
+            case 'm': // moveto dx dy
+                return MOVE_REL;
+            case 'L': // lineto 
+                return LINETO_ABS;
+            case 'l': // lineto dx dy
+                return LINETO_REL;
+            case 'H': // horizontal lineto
+                return HLINE_ABS;
+            case 'h': // horizontal lineto dx
+                return HLINE_REL;
+            case 'V': // vertical lineto
+                return VLINE_ABS;
+            case 'v': // vertical lineto dy
+                return VLINE_REL;
+            case 'C': // curveto
+                return CURVE_ABS;
+            case 'c': // curveto dx dy
+                return CURVE_REL;
+            case 'S': // smooth curveto 
+                return SMOOTH_ABS;
+            case 's': // smooth curveto 
+                return SMOOTH_REL;
+            case 'Q': // quadratic Bézier curve 
+                return QCURVE_ABS;
+            case 'q': // quadratic Bézier curve 
+                return QCURVE_REL;
+            case 'T': // smooth quadratic Bézier curveto 
+                return SMOOTH_QCURVE_ABS;
+            case 't': // smooth quadratic Bézier curveto 
+                return SMOOTH_QCURVE_REL;
+            case 'A': // elliptical Arc 
+                return ARC_ABS;
+            case 'a': // elliptical Arc 
+                return ARC_REL;
+            case 'Z': // closepath
+            case 'z': 
+                return CLOSEPATH;
+            default:
+                fprintf (stderr, "line %d: syntax error, unrecognized character: `%s'\n", svg_lineno, svg_text);
+                return InvalidCharacter;
+                break;
+        }
+        
+        /*return CHAR; */
+    }
+
+    {VERS}{WSPACE}{REL} {
+        svg_lval.s_val = strdup(svg_text);
+        return STR;
+    }
+
+    "," { 
+        /* separator for real numbers pairs */
+        return ' ';
+    }
+
+    {REAL1}|{REAL2}|{REAL3} {
+        std::string s = svg_text;
+        std::replace( s.begin(), s.end(), Settings::toDecimalPoint, Settings::fromDecimalPoint);
+        svg_lval.f_val = strtof(s.c_str(), NULL);
+        return FLOAT;
+    }
+
+    {ANY_TEXT} {
+        svg_lval.s_val = strdup(svg_text);
+        return STR;
+    }
 }
 
 . { /* any other character is invalid */

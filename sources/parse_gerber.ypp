@@ -63,7 +63,7 @@ extern int gerber_lineno;
 
 
 // init of first gerber data
-GerberData *gerber_data;// = new GerberData();
+GerberData *gerber_data = new GerberData();
 
 %}
 
@@ -182,7 +182,7 @@ gline:  X_PAR
         }
         | NEW_LINE
         {
-            GerberParser::dataVector << *gerber_data;
+            GerberParser::gerberVector << *gerber_data;
         }
         ;
 
@@ -192,6 +192,6 @@ gline:  X_PAR
 extern int gerber_charno;
 
 void gerber_error (const char * error) {
-  fprintf (stderr, "gerber line %d pos %d: %s\n", gerber_lineno, gerber_charno, error);
+    fprintf (stderr, "gerber line %d pos %d: %s\n", gerber_lineno, gerber_charno, error);
 //   return 0;
 }

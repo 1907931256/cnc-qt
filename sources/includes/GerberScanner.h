@@ -143,8 +143,6 @@ class GerberData
 };
 
 
-
-
 class GerberParser 
 {
     public:
@@ -153,13 +151,15 @@ class GerberParser
 
 //         QVector<GerberData> *dataVector();
         static bool read(char *indata);
+        static bool dataChecker();
 
     private:
         static void gerberInit();
         static void gerberDestroy();
 
    public:
-        static QVector<GerberData> dataVector;
+        static QVector<GerberData> gerberVector;
+        static QVector<GData> gcodeVector;
 };
 
 

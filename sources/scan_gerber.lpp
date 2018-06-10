@@ -108,153 +108,197 @@ NAME      [A-Z0-9]+
 
 %%
 
-<INITIAL>"%" {
-    /* begin of options */
-    yy_push_state(OPTION);
-}
-
-<OPTION>"%" {
-    yy_pop_state();
-}
-
-<OPTION>{MODE} {
-    if (gerber_text[2] == 'I') {
-        return SET_INCH;
+<INITIAL>{
+    "%" {
+        /* begin of options */
+        yy_push_state(OPTION);
     }
-    if (gerber_text[2] == 'M') {
-        return SET_MM;
+
+    {INFO} {
+        qInfo() << gerber_text;
+    }
+
+    {GRBBEG} {
+        /* begin prog */
+        qInfo() << gerber_text;
+    }
+
+    {GRBEND} {
+        /* end prog */
+    }
+
+    {DCODE} {
+        gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
+        return D_OPCODE;
+    }
+
+    {GCODE} {
+        gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
+        return G_OPCODE;
+    }
+
+    \G54{DICTNUM} {
+        gerber_lval.s_val = strdup(&gerber_text[3]);
+        return APER_SELECT;
     }
 }
 
-<INITIAL,OPTION>"*" {
-    /* end of data or separator between descriptor and followed datafield */
-}
+<INITIAL,OPTION>{
+    {OPER} {
+        /* ignore '(' and ')' */
+    }
 
-<INITIAL>{INFO} {
-    qInfo() << gerber_text;
-}
+    "*" {
+        /* end of data or separator between descriptor and followed datafield */
+    }
 
-<INITIAL>{GRBBEG} {
-    /* begin prog */
-    qInfo() << gerber_text;
-}
+    {WSPACE} {
+        /* ignore spaces */
+    }
 
-<INITIAL>{GRBEND} {
-    /* end prog */
-}
+    "," {
+        /* separator in options, ignore */
+    }
 
-<INITIAL,OPTION>{WSPACE} {
-    /* ignore spaces */
-}
+    {INT} {
+        gerber_lval.i_val = strtol(gerber_text, NULL, 10);
+        return INTEGER;
+    }
 
-<INITIAL,OPTION>"," {
-    /* separator in options, ignore */
-}
+    {REAL1}|{REAL2} {
+        std::string s = gerber_text;
+        std::replace( s.begin(), s.end(), Settings::toDecimalPoint, Settings::fromDecimalPoint);
+        gerber_lval.f_val = atof(s.c_str());
+        
+        return FLOAT;
+    }
 
-<INITIAL>{DCODE} {
+    \X{INT} {
+        gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
+        return X_PAR;
+    }
+
+    \Y{INT} {
+        gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
+        return Y_PAR;
+    }
+
+    \I{INT} {
     gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
-    return D_OPCODE;
-}
+        return I_PAR;
+    }
 
-<INITIAL>{GCODE} {
+    \J{INT} {
     gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
-    return G_OPCODE;
-}
+        return J_PAR;
+    }
 
-
-<OPTION>\MI {
-    return MIRRORING;
-}
-
-<OPTION>\A{INT}|{REAL1}|{REAL2} {
-    gerber_lval.f_val = atof(&gerber_text[1]);
-    return A_PAR;
-}
-
-<OPTION>\B{INT}|{REAL1}|{REAL2} {
-    gerber_lval.f_val = atof(&gerber_text[1]);
-    return B_PAR;
-}
-
-<OPTION>\T[FAOD] {
-    /* only attributes F, A, O, D */
-    switch (gerber_text[1]) {
-        case 'F': /* ATTRIBUTE */
-            break;
-        case 'A': /* APERTURE_ATTRIBUTE */
-            break;
-        case 'O': /* OBJECT_ATTRIBUTE */
-            break;
-        case 'D': /* DELETE_ATTRIBUTE */
-            break;
+    {EOL} {
+        gerber_charno = 1;
     }
 }
 
-<OPTION>\FS[LT][AI] {
-    /* L: OMIT_LEADING_ZEROS, T: OMIT_TRAILING_ZEROS, A: absolute, I: incremental */
-    qInfo() << gerber_text;
-    gerber_lval.s_val = strndup(&gerber_text[2], 2);
-    return FMT;
-}
-
-<OPTION>\SF {
-}
-
-<OPTION>\LN{FILENAME} {
-    /* name ? */
-}
-
-<OPTION>\AM{NAME} {
-    /* aperture macro */
-    gerber_lval.s_val = strdup(&gerber_text[2]);
-    return APER_MACRO_NAME;
-}
-
-<OPTION>\AD{DICTNUM}{NAME}? {
-    /* aperture dictionary */
-    gerber_lval.s_val = strdup(&gerber_text[2]);
-    return APER_DICTIONARY;
-}
-
-<OPTION>\IP{POS}|{NEG} {
-    /* image polarity */ 
-    if (gerber_text[2] == 'P') {
-        return POSITIVE;
+<OPTION>{
+    "%" {
+        yy_pop_state();
     }
-    else {
-        return NEGATIVE;
+
+    {MODE} {
+        if (gerber_text[2] == 'I') {
+            return SET_INCH;
+        }
+        if (gerber_text[2] == 'M') {
+            return SET_MM;
+        }
+    }
+
+    \MI {
+        return MIRRORING;
+    }
+
+    \A{INT}|{REAL1}|{REAL2} {
+        gerber_lval.f_val = atof(&gerber_text[1]);
+        return A_PAR;
+    }
+
+    \B{INT}|{REAL1}|{REAL2} {
+        gerber_lval.f_val = atof(&gerber_text[1]);
+        return B_PAR;
+    }
+
+    \T[FAOD] {
+        /* only attributes F, A, O, D */
+        switch (gerber_text[1]) {
+            case 'F': /* ATTRIBUTE */
+                break;
+            case 'A': /* APERTURE_ATTRIBUTE */
+                break;
+            case 'O': /* OBJECT_ATTRIBUTE */
+                break;
+            case 'D': /* DELETE_ATTRIBUTE */
+                break;
+        }
+    }
+
+    \FS[LT][AI] {
+        /* L: OMIT_LEADING_ZEROS, T: OMIT_TRAILING_ZEROS, A: absolute, I: incremental */
+        qInfo() << gerber_text;
+        gerber_lval.s_val = strndup(&gerber_text[2], 2);
+        return FMT;
+    }
+
+    \SF {
+    }
+
+    \LN{FILENAME} {
+        /* name ? */
+    }
+
+    \AM{NAME} {
+        /* aperture macro */
+        gerber_lval.s_val = strdup(&gerber_text[2]);
+        return APER_MACRO_NAME;
+    }
+
+    \AD{DICTNUM}{NAME}? {
+        /* aperture dictionary */
+        gerber_lval.s_val = strdup(&gerber_text[2]);
+        return APER_DICTIONARY;
+    }
+
+    \IP{POS}|{NEG} {
+        /* image polarity */ 
+        if (gerber_text[2] == 'P') {
+            return POSITIVE;
+        }
+        else {
+            return NEGATIVE;
+        }
+    }
+
+    \LP[DC] {
+        /* level polarity */
+        if (gerber_text[2] == 'D') {
+            return POSITIVE;
+        }
+        else {
+            return NEGATIVE;
+        }
+    }
+    \G9[01] {
+        /* 0 is abs 1 is rel */ 
+        if (gerber_text[2] == '0') {
+            return ABS;
+        }
+        else {
+            return REL;
+        }
+    }
+
+    \SR {
     }
 }
 
-<OPTION>\LP[DC] {
-    /* level polarity */
-    if (gerber_text[2] == 'D') {
-        return POSITIVE;
-    }
-    else {
-        return NEGATIVE;
-    }
-}
-
-<INITIAL>\G54{DICTNUM} {
-    gerber_lval.s_val = strdup(&gerber_text[3]);
-    return APER_SELECT;
-}
-
-<INITIAL,OPTION>{OPER} {
-    /* ignore '(' and ')' */
-}
-
-
-<OPTION>\G9[01] {
-    /* 0 is abs 1 is rel */ 
-    if (gerber_text[2] == '0') {
-        return ABS;
-    }
-    else {
-        return REL;
-    }
-}
 
 {QUAD} {
     /* quadr */
@@ -266,46 +310,6 @@ NAME      [A-Z0-9]+
     }
     else {
     }
-}
-
-<OPTION>\SR {
-}
-
-<INITIAL,OPTION>{INT} {
-    gerber_lval.i_val = strtol(gerber_text, NULL, 10);
-    return INTEGER;
-}
-
-<INITIAL,OPTION>{REAL1}|{REAL2} {
-    std::string s = gerber_text;
-    std::replace( s.begin(), s.end(), Settings::toDecimalPoint, Settings::fromDecimalPoint);
-    gerber_lval.f_val = atof(s.c_str());
-    
-    return FLOAT;
-}
-
-<INITIAL,OPTION>\X{INT} {
-    gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
-    return X_PAR;
-}
-
-<INITIAL,OPTION>\Y{INT} {
-    gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
-    return Y_PAR;
-}
-
-<INITIAL,OPTION>\I{INT} {
-   gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
-    return I_PAR;
-}
-
-<INITIAL,OPTION>\J{INT} {
-   gerber_lval.i_val = strtol(&gerber_text[1], NULL, 10);
-    return J_PAR;
-}
-
-<INITIAL,OPTION>{EOL} {
-    gerber_charno = 1;
 }
 
 
