@@ -108,7 +108,7 @@ void GerberData::CalculateGatePoints(int _accuracy)
 
 
 // is static
-QVector<GerberData> GerberParser::dataVector;
+QVector<GerberData> GerberParser::gerberVector;
 
 /**
  * @brief constructor
@@ -124,7 +124,7 @@ GerberParser::GerberParser()
  */
 GerberParser::~GerberParser()
 {
-    dataVector.clear();
+    gerberVector.clear();
 }
 
 
@@ -163,7 +163,7 @@ bool GerberParser::read(char *indata)
     //     GerberData grb;
     int ret = true;
 
-    dataVector.clear();
+    gerberVector.clear();
 
 //     mut.lock();
 
@@ -192,6 +192,10 @@ bool GerberParser::read(char *indata)
     return true;
 }
 
+
+bool GerberParser::dataChecker()
+{
+}
 
 #if 0
 //
